@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
+    <script src="lessons.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous" />
+</head>
+
+<body>
+    <div id="app">
+        <h1> List of Lessons </h1>
+
+        <h2> Sorting </h2>
+
+        <button @click="sortByPrice">Price</button>
+        <button @click="sortBySubject">Subject</button>
+        <button @click="sortbyLocation">Location</button>
+        <button @click="sortBySpace">Space</button>
+
+        <form>
+            <input type="text" placeholder="Search" @input="search">
+        </form>
+
+
+        <div class="container">
+            <div v-for="lesson in filteredLessons" :key="lesson.id" class="lesson">
+                <!-- key must be  added for  uniqness -->
+                <!-- In here we are rendering the list of lessons stored in the array -->
+                <!-- Everytime it renders it gets updated by a new subject -->
+                <div>Subject : {{ lesson.Subject }}</div>
+                <div>Location : {{ lesson.Location }}</div>
+                <div>Price : {{ lesson.Price }}</div>
+                <div>Space : {{ lesson.Space }}</div>
+                <div>
+                    <img :src="lesson.img" width="50">
+                </div>
+
+                <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
+                    <!-- add to cart button -->
+
+                    <div class="text-center disabled">
+                        <button :disabled="lesson.Space == 0 ? true : false" v-on:click='addToCart' :data-id="lesson.id"
+                            class="btn btn-outline-dark mt-auto">Add to
+                            Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h2>Cart</h2>
+        <div class="container">
+
+            <!-- Show lesson from the cart  -->
+            <div class="lesson" v-for="lesson in cart" :key="lesson.id">
+                <div>Subject : {{ lesson.Subject }}</div>
+                <div>Location : {{ lesson.Location }}</div>
+                <div>Price : {{ lesson.Price }}</div>
+                <div>
+                    <img :src="lesson.img" width="50">
+
+                </div>
+
+
+                <div class="card-footer  pt-4 pb-4 border-top-0 bg-transparent">
+                    <!-- remove cart button -->
+
+                    <div class="text-center disabled">
+                        <button v-on:click='removeFromCart' :data-id="lesson.id"
+                            class="btn btn-outline-dark" style="margin: 0;">Remove</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="container">
+            <div>
+                <form @submit="checkout">
+                    <input type="text" v-model="name" placeholder="Name">
+                    <input type="text" v-model="number" placeholder="Number">
+                    <button type="submit" class="btn btn-outline-dark mt-auto"> Checkout </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+
+        const app = new Vue({
+            el: "#app",
+            data() {
+                return {
+                    lessons: lessons,
+                    filteredLessons:lessons,
+                    cart: [],
+                    name: "",
+                    number: ""
+                }
+            },
+            methods: {
+                sortByPrice() {
+                    const temp = JSON.parse(JSON.stringify(this.filteredLessons));
+
+                    temp.sort((a, b) => a.Price - b.Price); // sorting on PRice which is a number
+                    this.filteredLessons = temp;
+                },
+                sortBySpace() {
+                    const temp = JSON.parse(JSON.stringify(this.filteredLessons));
+
+                    temp.sort((a, b) => a.Space - b.Space); // sorting by spaces available
+                    this.filteredLessons = temp;
+                },
+                sortBySubject() { //// sorting in reverse alpahetical order Z-A 
+                    const temp = JSON.parse(JSON.stringify(this.filteredLessons));
+
+                    temp.sort((a, b) => {
+                        if (a.Subject < b.Subject) {
+                            return 1
+                        } else if (a.Subject > b.Subject) {
+                            return -1;
+                        } else {
+                            return 0;
+                        }
+                    });
+                    this.filteredLessons = temp;
+                },
+                sortbyLocation() { //sorting by location in alphabetical order A-Z
+
+                    const temp = JSON.parse(JSON.stringify(this.filteredLessons));
+                    temp.sort((a, b) => {
+                        if (a.Location > b.Location) {
+                            return 1
+                        } else if (a.Location < b.Location) {
+                            return -1;
+                        } else {
+                            return 0;
+                        }
+                    });
+                    this.filteredLessons = temp;
+
+                },
+
+                addToCart(event) {
+//the event executes when ever a button is clicked or page loads
+                    //event: default event
+
+                    let target = event.target;
+                    let id = target.dataset.id;
+
+                    let theLesson = null;
+
+                    //find the lesson that is clicked
+                    this.lessons.forEach((lesson) => {
+                        if (lesson.id == id) {
+                            theLesson = lesson;
+                        }
+                    });
+
+                    //if our lesson space is greater than 0, add to cart
+                    if (theLesson.Space > 0) {
+                        theLesson.Space--;
+                        this.cart.push(theLesson);
+                    }
+
+                },
+
+                removeFromCart(event) {
+                    //event: default event
+
+                    let target = event.target;
+                    let id = target.dataset.id;
+
+
+                    //find the lesson from the cart and remove it
+                    let tempLessons = [];
+                    this.cart.forEach((lesson) => {
+                        if (lesson.id != id) {
+                            tempLessons.push(lesson);
+                        } else {
+                            // add space back to the lesson of
+                            lesson.Space++;
+                        }
+                    });
+
+                    this.cart = tempLessons;
+                },
+
+                checkout(event) {
+                    event.preventDefault();//when ever we submit the form, it refreshes the page
+                    if (this.name == "" || this.number == "") {
+                        alert("Please fill the form")
+                        return
+                    }
+                    let regname = new RegExp('^[a-zA-Z ]+$');
+                    let validname = regname.test(this.name);
+
+                    if (validname == false) {
+                        alert("Please type name in alphabets")
+                        return
+                    }
+                    let regnumber = new RegExp('^[0-9]+$');
+                    let validnumber = regnumber.test(this.number);
+
+                    if (validnumber == false) {
+                        alert("Please type number, no letters allowed")
+                        return
+                    }
+
+                    //if there are not items in the cart, show message
+                    if (this.cart.length <= 0) {
+                        alert('No items in the cart');
+                        return;
+                    }
+
+                    alert("Submitted successfully");
+                },
+
+                search(event){
+                    let target = event.target;
+                    let keyword = target.value;
+
+                    this.filteredLessons = [];//contains all the lessons in the array
+                    let temp = [] 
+                    this.lessons.forEach(function(lesson){//looping through each lesson that matches with out array and add it to temp
+                        if(lesson.Subject.toLowerCase().includes(keyword.toLowerCase()) == true || lesson.Price.toString().toLowerCase().includes(keyword.toLowerCase()) == true  || lesson.Location.toLowerCase().includes(keyword.toLowerCase()) == true){
+                            temp.push(lesson)
+                        }
+                    });
+//at the end when the user backspace it goes back to the original 
+                    this.filteredLessons = temp
+                }
+
+            },
+            computed: {
+
+            }
+        })
+    </script>
+
+    <style>
+        .lesson {
+            border-radius: 4px;
+            border: 1px solid black;
+            width: 15%;
+            padding: 15px;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            width: 2000px;
+            padding-top: 50px;
+            padding-bottom: 50px;
+        }
+    </style>
+
+</body>
+
+</html>
